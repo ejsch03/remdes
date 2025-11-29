@@ -1,0 +1,14 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = { workspace = true }
+bytemuck = { workspace = true }
+clap = { workspace = true }
+lz4 = { workspace = true }
+parking_lot = { workspace = true }
+remdes = { path = ".." }
+waitx = { workspace = true }
+windows-capture = "1.5.0"

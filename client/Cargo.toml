@@ -1,0 +1,25 @@
+[package]
+name = "client"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = { workspace = true }
+atomic_enum = "0.3.0"
+bytemuck = { workspace = true }
+clap = { workspace = true }
+ctrlc = { workspace = true }
+env_logger = { workspace = true }
+glow = "0.16.0"
+log = { workspace = true }
+lz4 = { workspace = true }
+parking_lot = { workspace = true }
+pfrs = "0.1.3"
+remdes = { path = ".." }
+sdl2 = { version = "0.38.0", features = ["bundled", "static-link"] }
+spin_sleep = { workspace = true }
+waitx = { workspace = true }
+
+[build-dependencies]
+naga = { version = "27.0.3", features = ["glsl-in"] }
+shaderc = "0.10.1"
