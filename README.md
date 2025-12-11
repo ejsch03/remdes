@@ -1,6 +1,6 @@
 # remdes
 
-An extremely lightweight remote desktop solution focused on speed, simplicity, and low-latency screen sharing.
+An extremely lightweight remote desktop streaming solution focused on low-latency.
 
 ## Usage
 Client
