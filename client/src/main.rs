@@ -60,7 +60,7 @@ fn event_loop(
     tex: &mut Texture2D,
     frame: Arc<Mutex<Region>>,
     tx_render: Waker,
-    timer_fps_cfg: &mut impl FnMut(u8),
+    set_fps_limit: &mut impl FnMut(u8),
 ) {
     for event in ep.wait_iter() {
         match event {
@@ -88,7 +88,7 @@ fn event_loop(
                     }
 
                     // set a new fps target
-                    UserEvent::Fps(fps) => timer_fps_cfg(fps),
+                    UserEvent::Fps(fps) => set_fps_limit(fps),
                 }
             }
             _ => (),
