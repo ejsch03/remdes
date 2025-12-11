@@ -8,8 +8,9 @@ Client
 Usage: client [OPTIONS]
 
 Options:
-      --lu <LU>    Local UDP address [default: 127.0.0.1:49152]    
-      --ru <RU>    Remote UDP IP address [default: 127.0.0.1:54287]
+      --rt <RT>    Remote TCP address [default: 127.0.0.1:54277]
+      --lu <LU>    Local UDP address [default: 127.0.0.1:49152]
+      --ru <RU>    Remote UDP address [default: 127.0.0.1:54287]
   -f, --fps <FPS>  Specify the FPS [default: 120]
   -h, --help       Print help
 ```
@@ -19,7 +20,8 @@ Usage: server [OPTIONS] --window <WINDOW>
 
 Options:
   -w, --window <WINDOW>  Target window whose title contains the given substring
-      --lu <LU>          Local UDP IP address [default: 127.0.0.1:54287]
+      --lt <LT>          Local TCP address [default: 127.0.0.1:54277]
+      --lu <LU>          Local UDP address [default: 127.0.0.1:54287]
   -t, --tps <TPS>        Server ticks/sec [default: 128]
   -h, --help             Print help
 ```
