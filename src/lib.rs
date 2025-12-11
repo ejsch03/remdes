@@ -1,4 +1,3 @@
-pub mod net;
 pub mod util;
 
 pub use anyhow::*;
@@ -9,9 +8,8 @@ use std::{
     time::Duration,
 };
 
-// default dynamic ports (arbitrary, for now)
+pub const TCP_PORT: u16 = 54277;
 pub const UDP_PORT: u16 = 54287;
-
 pub const UDP_CHUNK_SIZE: usize = 36_864;
 
 pub const SECOND: Duration = Duration::from_secs(1);
@@ -68,7 +66,6 @@ impl RegionHeader {
     }
 }
 
-#[repr(C)]
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Region {
     header: RegionHeader,
@@ -76,6 +73,7 @@ pub struct Region {
 }
 
 impl Region {
+    #[inline]
     pub const fn header(&self) -> RegionHeader {
         self.header
     }
