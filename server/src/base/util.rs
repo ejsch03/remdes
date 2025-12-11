@@ -1,11 +1,14 @@
-use parking_lot::Mutex;
-use remdes::*;
-use std::io::{Write, stdout};
-use std::net::UdpSocket;
-use std::sync::Arc;
+use crate::*;
+use std::{io::Write, net::SocketAddr};
 
-pub fn init_remote(udp: &UdpSocket, region: &Arc<Mutex<Region>>, rx: &waitx::Waiter) -> Result<()> {
-    let mut out = stdout();
+pub fn handle_client(
+    udp: &UdpSocket,
+    addr: SocketAddr,
+    region: &Arc<Mutex<Region>>,
+    is_running: &AtomicBool,
+    rx_dist: &Waiter,
+) -> Result<()> {
+    let mut out = std::io::stdout();
 
     let mut buf = [0u8; 2 + UDP_CHUNK_SIZE];
     let mut current_region = Region::default();
@@ -14,7 +17,7 @@ pub fn init_remote(udp: &UdpSocket, region: &Arc<Mutex<Region>>, rx: &waitx::Wai
         let t = std::time::Instant::now();
 
         // wait for notification
-        rx.wait();
+        rx_dist.wait();
 
         // bring the current region up-to-date
         {
@@ -27,7 +30,7 @@ pub fn init_remote(udp: &UdpSocket, region: &Arc<Mutex<Region>>, rx: &waitx::Wai
         /////////////////////////////////////////////
 
         // send the frame to the client
-        udp.send(bytemuck::bytes_of(&header))?;
+        udp.send_to(bytemuck::bytes_of(&header), addr)?;
 
         // distribute each chunk
         for (i, chunk) in data.chunks(UDP_CHUNK_SIZE).enumerate() {
@@ -41,7 +44,7 @@ pub fn init_remote(udp: &UdpSocket, region: &Arc<Mutex<Region>>, rx: &waitx::Wai
             buf[2..2 + chunk_len].copy_from_slice(chunk_compressed.as_slice());
 
             // Send header + chunk bytes
-            udp.send(&buf[..2 + chunk_len])?;
+            udp.send_to(&buf[..2 + chunk_len], addr)?;
         }
 
         // Print timing info
@@ -59,5 +62,9 @@ pub fn init_remote(udp: &UdpSocket, region: &Arc<Mutex<Region>>, rx: &waitx::Wai
             .as_bytes(),
         )?;
         out.flush()?;
+
+        if !is_running.load(Ordering::Relaxed) {
+            break Ok(());
+        }
     }
 }

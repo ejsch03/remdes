@@ -1,5 +1,6 @@
 use crate::*;
 use clap::Parser;
+use remdes::util::get_socket_addr;
 use std::{net::SocketAddr, time::Duration};
 
 /// Calculates the duration of a single game tick.
@@ -20,8 +21,12 @@ pub struct Config {
     #[arg(short, long)]
     window: String,
 
-    /// Local UDP IP address.
-    #[arg(long, default_value_t = remdes::net::get_socket_addr(UDP_PORT))]
+    /// Local TCP address.
+    #[arg(long, default_value_t = get_socket_addr(TCP_PORT))]
+    lt: SocketAddr,
+
+    /// Local UDP address.
+    #[arg(long, default_value_t = get_socket_addr(UDP_PORT))]
     lu: SocketAddr,
 
     /// Server ticks/sec.
@@ -32,6 +37,10 @@ pub struct Config {
 impl Config {
     pub const fn window(&self) -> &str {
         self.window.as_str()
+    }
+
+    pub const fn local_tcp_addr(&self) -> SocketAddr {
+        self.lt
     }
 
     pub const fn local_udp_addr(&self) -> SocketAddr {

@@ -1,10 +1,4 @@
-use crate::base::Config;
-use anyhow::*;
-use parking_lot::Mutex;
-use remdes::*;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
-use std::thread::{JoinHandle, spawn};
+use crate::*;
 use windows_capture::window::Window;
 use windows_capture::{
     capture::GraphicsCaptureApiHandler,
@@ -20,27 +14,22 @@ struct Streamer {
     region: Arc<Mutex<Region>>,
     region_id: Arc<AtomicU8>,
     is_running: Arc<AtomicBool>,
-    tx: waitx::Waker,
+    tx_dist: Waker,
 }
 
 impl GraphicsCaptureApiHandler for Streamer {
     type Error = Error;
-    type Flags = (
-        Arc<Mutex<Region>>,
-        Arc<AtomicU8>,
-        Arc<AtomicBool>,
-        waitx::Waker,
-    );
+    type Flags = (Arc<Mutex<Region>>, Arc<AtomicU8>, Arc<AtomicBool>, Waker);
 
     // Function that will be called to create a new instance. The flags can be
     // passed from settings.
     fn new(ctx: windows_capture::capture::Context<Self::Flags>) -> Result<Self, Self::Error> {
-        let (region, region_id, is_running, tx) = ctx.flags;
+        let (region, region_id, is_running, tx_dist) = ctx.flags;
         Ok(Self {
             region,
             region_id,
             is_running,
-            tx,
+            tx_dist,
         })
     }
 
@@ -51,7 +40,8 @@ impl GraphicsCaptureApiHandler for Streamer {
     ) -> Result<(), Self::Error> {
         if !self.is_running.load(Ordering::Relaxed) {
             capture_control.stop();
-            bail!("Stopping.")
+            self.tx_dist.signal();
+            return Ok(());
         }
 
         let mut frame_buffer = frame.buffer()?;
@@ -59,7 +49,7 @@ impl GraphicsCaptureApiHandler for Streamer {
         let src = frame_buffer.as_raw_buffer();
         let l = src.len();
 
-        // TODO - locate differences?
+        // TODO - impl regional tiling
 
         {
             let mut region = self.region.lock();
@@ -73,12 +63,12 @@ impl GraphicsCaptureApiHandler for Streamer {
 
             let dst = region.data_mut();
 
-            if dst.capacity() < src.len() {
-                dst.reserve_exact(src.len() - dst.capacity());
+            if dst.capacity() < l {
+                dst.reserve_exact(l - dst.capacity());
             }
             unsafe {
-                dst.set_len(src.len());
-                std::ptr::copy_nonoverlapping(src.as_ptr(), dst.as_mut_ptr(), src.len());
+                dst.set_len(l);
+                std::ptr::copy_nonoverlapping(src.as_ptr(), dst.as_mut_ptr(), l);
             }
         }
 
@@ -90,7 +80,7 @@ impl GraphicsCaptureApiHandler for Streamer {
                 })
                 .unwrap_unchecked();
         }
-        self.tx.wake();
+        self.tx_dist.wake();
         Ok(())
     }
 }
@@ -100,13 +90,18 @@ pub fn start_capturing(
     region: Arc<Mutex<Region>>,
     region_id: Arc<AtomicU8>,
     is_running: Arc<AtomicBool>,
-    tx: waitx::Waker,
+    (tx_dist, rx_conn): (Waker, Waiter),
 ) -> JoinHandle<Result<()>> {
     spawn(move || {
+        rx_conn.update_thread();
+
         // Gets the primary monitor, refer to the docs for other capture items.
         let target = Window::from_contains_name(cfg.window())?;
 
         loop {
+            // wait for connection
+            rx_conn.wait();
+
             // reset back to normal state (true)
             is_running.store(true, Ordering::SeqCst);
 
@@ -124,18 +119,16 @@ pub fn start_capturing(
                     region.clone(),
                     region_id.clone(),
                     is_running.clone(),
-                    tx.clone(),
+                    tx_dist.clone(),
                 ),
             );
 
             // begin screen capturing
             if let Err(e) = Streamer::start(settings) {
-                eprintln!("run: {}", e);
-                break Ok(());
+                eprintln!("run: {:?}", e);
+                // fallback reset
+                is_running.store(false, Ordering::SeqCst);
             }
-
-            // this lets the windows-capture thread know when to exit
-            is_running.store(false, Ordering::SeqCst);
         }
     })
 }
