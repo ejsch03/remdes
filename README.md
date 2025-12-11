@@ -24,22 +24,23 @@ Options:
   -h, --help             Print help
 ```
 
-## Features
-- [x] Any FPS (configurable with the `--fps` flag).
-- [x] Near-instant latency (on LAN only, WiFi is rough at the moment).
-- [ ] Client-to-Server Input.
-- [ ] Server-to-Client Audio.
-- [ ] Window resizing.
-
 ## Compatibility
 - Client is cross-platform.
 - Server is Windows-only.
 
 ## Todo
-1) Implement client-server regional tiling.
-2) Implement client-to-server user input.
-3) Implement sharing server audio.
-4) Improve/guarantee atomic ordering.
-5) Improve overall documentation.
-6) Fix client's windows resizing.
-7) Upgrade to SDL3.
+- [x] Server-to-Client video.
+  - [x] UDP implementation.
+  - [x] compressed ([lz4](https://crates.io/crates/lz4)) chunks.
+  - [ ] regional (dirty) tiling.
+- [ ] Server-to-Client audio.
+  - [ ] UDP implementation.
+  - [ ] [Opus](https://crates.io/crates/opus)?
+- [ ] Client-to-Server input.
+  - [ ] UDP implementation.
+- [ ] Client/Server window resizing.
+  - [ ] Modify client vertex shader?
+- [ ] Screen-capturing for Unix.
+- [ ] Improve atomic ordering.
+- [ ] Complete documentation.
+- [ ] Migrate to SDL3?
