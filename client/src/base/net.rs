@@ -17,7 +17,7 @@ fn init_frame_handler(
     [rx_frame, rx_render]: [Waiter; 2],
     [frame_og, frame_aux]: [Arc<Mutex<Region>>; 2],
     fps_upt: Arc<FpsUpdater>,
-    limit: Arc<Limit>,
+    limit_dur: Arc<Limit>,
 ) -> JoinHandle<Result<()>> {
     spawn(move || {
         rx_frame.update_thread();
@@ -31,7 +31,7 @@ fn init_frame_handler(
             rx_frame.wait();
 
             // obtain limit before waiting
-            let required_delay = limit.get();
+            let required_delay = limit_dur.get();
 
             // adhere to fps limit
             let rem = required_delay.saturating_sub(t.elapsed());
@@ -65,7 +65,7 @@ pub fn init_remote(
     frame_og: Arc<Mutex<Region>>,
     rx_render: Waiter,
     fps_upt: Arc<FpsUpdater>,
-    limit: Arc<Limit>,
+    limit_dur: Arc<Limit>,
 ) -> JoinHandle<Result<()>> {
     spawn(move || {
         let _heartbeat = {
@@ -113,7 +113,7 @@ pub fn init_remote(
             [rx_frame, rx_render],
             [frame_og, frame_aux.clone()],
             fps_upt,
-            limit,
+            limit_dur,
         );
 
         // let mut bandwidth = 0;
