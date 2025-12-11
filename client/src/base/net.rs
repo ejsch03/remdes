@@ -1,5 +1,9 @@
 use crate::*;
-use std::{net::UdpSocket, time::Instant};
+use std::{
+    io::Read,
+    net::{TcpStream, UdpSocket},
+    time::Instant,
+};
 
 fn handle_header(buf: &[u8], region: &mut Region) {
     // deserialize and reset header
@@ -64,9 +68,22 @@ pub fn init_remote(
     limit: Arc<Limit>,
 ) -> JoinHandle<Result<()>> {
     spawn(move || {
+        let _heartbeat = {
+            let mut tcp = TcpStream::connect(cfg.remote_tcp_addr()).unwrap();
+            tcp.read_exact(&mut [0]).unwrap();
+            tcp.write_all(&[0]).unwrap();
+
+            spawn(move || -> Result<()> {
+                loop {
+                    tcp.read_exact(&mut [0]).unwrap();
+                    tcp.write_all(&[0]).unwrap();
+                }
+            })
+        };
+
         let udp = UdpSocket::bind(cfg.local_udp_addr()).unwrap();
-        udp.connect(cfg.remote_udp_addr())?;
-        udp.send(&[0])?;
+        udp.connect(cfg.remote_udp_addr()).unwrap();
+        udp.send(&[0]).unwrap();
 
         // auxillary frame buffer
         let frame_aux: Arc<Mutex<Region>> = Default::default();
