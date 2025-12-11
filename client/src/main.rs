@@ -24,9 +24,6 @@ use std::{
 };
 use waitx::*;
 
-/// A thread-safe [`RawRenderState`].
-pub type RenderState = Arc<AtomicRenderStateKind>;
-
 /// Current state of the rendering thread.
 #[atomic_enum]
 #[derive(Default)]
@@ -42,19 +39,6 @@ pub enum UserEvent {
     Render,
     Fps(u8),
 }
-
-// /// TODO - integrate [`AtomicBool`] determinant for end of program.
-// fn handle_ctrlc(event_sender: EventSender) -> Result<()> {
-//     ctrlc::set_handler(move || {
-//         if event_sender
-//             .push_event(Event::Quit { timestamp: 0 })
-//             .is_err()
-//         {
-//             log::error!("Failed to notify event handler to quit")
-//         }
-//     })
-//     .map_err(Into::into)
-// }
 
 /// Render the texture
 fn display(gl: &glow::Context, window: &Window) {
@@ -127,7 +111,7 @@ fn main() -> Result<()> {
         Default::default();
 
     // determinant of the status of threads
-    let state: RenderState = Arc::new(AtomicRenderStateKind::new(RenderStateKind::default()));
+    let state = Arc::new(AtomicRenderStateKind::new(RenderStateKind::default()));
 
     // reset the fps counter every second
     let _fps_resetter = init_fps_resetter(fps.clone(), fps_upt.clone());
