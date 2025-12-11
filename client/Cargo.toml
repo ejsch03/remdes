@@ -8,7 +8,6 @@ anyhow = { workspace = true }
 atomic_enum = "0.3.0"
 bytemuck = { workspace = true }
 clap = { workspace = true }
-ctrlc = { workspace = true }
 env_logger = { workspace = true }
 glow = "0.16.0"
 log = { workspace = true }
